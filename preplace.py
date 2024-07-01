@@ -195,21 +195,19 @@ if __name__ == "__main__":
     pickup_point, master_point, num_layers = getMasterPoint()
 
     # Define box coordinates and largest dimension
-    largest_dimension = 0.3
+    largest_dimension = 3
     box_coords = [
-        [0.1, 0.35, 1.57],  # b3
-        [0.3, 0.35, 1.57],  # b4
-        [0.5, 0.35, 1.57],
-        [0.15, 0.1, 0],  # b1
-        [0.45, 0.1, 0],  # b2
-           # b5
+        [1.5, 1, 0],  # b1
+        [4.5, 1, 0],  # b2
+        [1, 3.5, 0],  # b3
+        [3, 3.5, 0],  # b4
+        [5, 3.5, 0]   # b5
     ]
 
     rb = RobotData()
     try:
         rb.connect('192.168.1.200')
 
-        current_angle = 0  # Initialize the current angle
         for layer in range(num_layers):
             for i, box in enumerate(box_coords):
                 pre_pickup = calculate_pre_point(pickup_point)
@@ -225,10 +223,10 @@ if __name__ == "__main__":
                 # Apply rotation to pre-place, place, and pre-place (second time)
                 rotation_angle = box[2]  # Get the rotation angle
                 pre_place_rotated = apply_rotation(pre_place.copy(), rotation_angle)
-                box_abs_rotated = apply_rotation([box[0], box[1], master_point[2], 0, 0, 0], rotation_angle)
+                box_abs_rotated = apply_rotation([box[0], box[1], master_point[2] + 0.2, 0, 0, 0], rotation_angle)  # Ensure correct z offset
 
                 rb.movel(pre_place_rotated)
-                time.sleep(4)
+                time.sleep(3)
                 rb.movel(box_abs_rotated)
                 time.sleep(3)
                 rb.movel(pre_place_rotated)
@@ -237,7 +235,7 @@ if __name__ == "__main__":
                 # Apply rotation to pre-pickup for next pickup
                 pre_pickup_rotated = apply_rotation(pre_pickup.copy(), -rotation_angle)
                 rb.movel(pre_pickup_rotated)
-                time.sleep(4)
+                time.sleep(3)
 
             # Adjust height for next layer
             pickup_point[2] += 0
