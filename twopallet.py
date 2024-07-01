@@ -135,15 +135,21 @@ def get_tcp_pose(robot_ip):
     return tcp_position
 
 
-def getMasterPoints():
+def getMasterPoints(num_pallets):
     robot_ip = '192.168.1.200'
-    input("Press enter after reaching desired master location for Pallet 1 and switch robot to Remote mode")
-    master_point1 = get_tcp_pose(robot_ip)
-    print("Master Point 1:", master_point1)
+    if num_pallets == 1:
+        input("Press enter after reaching desired master location for Pallet 1 and switch robot to Remote mode")
+        master_point1 = get_tcp_pose(robot_ip)
+        print("Master Point 1:", master_point1)
+        master_point2 = None
+    else:
+        input("Press enter after reaching desired master location for Pallet 1 and switch robot to Remote mode")
+        master_point1 = get_tcp_pose(robot_ip)
+        print("Master Point 1:", master_point1)
 
-    input("Press enter after reaching desired master location for Pallet 2")
-    master_point2 = get_tcp_pose(robot_ip)
-    print("Master Point 2:", master_point2)
+        input("Press enter after reaching desired master location for Pallet 2")
+        master_point2 = get_tcp_pose(robot_ip)
+        print("Master Point 2:", master_point2)
 
     input("Press enter after reaching desired pickup location")
     pickup = get_tcp_pose(robot_ip)
@@ -164,7 +170,9 @@ def apply_rotation(position, angle_rad):
 
 
 if __name__ == "__main__":
-    pickup_point, master_point1, master_point2, num_layers = getMasterPoints()
+    num_pallets = int(input("Enter the number of pallets (1 or 2): "))
+
+    pickup_point, master_point1, master_point2, num_layers = getMasterPoints(num_pallets)
 
     # Two different box_coords for two pallets
     box_coords_pallet1 = [
@@ -181,8 +189,8 @@ if __name__ == "__main__":
         [0.25, 0.25, 1.57]  # 90 degrees
     ]
 
-    master_points = [master_point1, master_point2]  # List of master points for alternating
-    box_coords_list = [box_coords_pallet1, box_coords_pallet2]  # List of box_coords for alternating
+    master_points = [master_point1, master_point2] if num_pallets == 2 else [master_point1]
+    box_coords_list = [box_coords_pallet1, box_coords_pallet2] if num_pallets == 2 else [box_coords_pallet1]
 
     rb = RobotData()
     try:
@@ -190,8 +198,8 @@ if __name__ == "__main__":
 
         for layer in range(num_layers):
             for i in range(max(len(box_coords_pallet1), len(box_coords_pallet2))):
-                master_point = master_points[i % 2]  # Alternate between master_point1 and master_point2
-                box_coords = box_coords_list[i % 2]  # Alternate between box_coords_pallet1 and box_coords_pallet2
+                master_point = master_points[i % len(master_points)]  # Alternate between master points
+                box_coords = box_coords_list[i % len(box_coords_list)]  # Alternate between box coordinates
 
                 if i >= len(box_coords):
                     continue  # Skip if the current box index exceeds the length of the box coordinates
@@ -228,7 +236,8 @@ if __name__ == "__main__":
             # Adjust height for next layer
             pickup_point[2] += 0.1
             master_point1[2] += 0.1
-            master_point2[2] += 0.1
+            if master_point2:
+                master_point2[2] += 0.1
 
     except (socket.error, socket.timeout) as e:
         print(f"Socket error: {e}")
@@ -237,5 +246,6 @@ if __name__ == "__main__":
 
     print("Pickup Point:", pickup_point)
     print("Master Point 1:", master_point1)
-    print("Master Point 2:", master_point2)
+    if master_point2:
+        print("Master Point 2:", master_point2)
     print("Number of Layers:", num_layers)
