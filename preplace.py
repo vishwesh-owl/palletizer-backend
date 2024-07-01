@@ -51,7 +51,7 @@ class RobotData():
 
     def connect(self, ip, port=30001):
         try:
-            self.__sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.__sock = socket.socket(socket.AF_INET, socket.AF_INET, socket.SOCK_STREAM)
             self.__sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.__sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             self.__sock.settimeout(DEFAULT_TIMEOUT)
@@ -186,7 +186,7 @@ def calculate_pre_placement_point(box_coords, largest_dimension, current_box_ind
 
     pre_place_x = current_box[0] + (x_offset if x_signs.count(1) > x_signs.count(-1) else -x_offset if x_signs.count(-1) > x_signs.count(1) else 0)
     pre_place_y = current_box[1] + (y_offset if y_signs.count(1) > y_signs.count(-1) else -y_offset if y_signs.count(-1) > y_signs.count(1) else 0)
-    pre_place_z = current_box[2] + z_offset
+    pre_place_z = master_point[2] + z_offset
 
     return [pre_place_x, pre_place_y, pre_place_z, 0, 0, 0]  # Ensure the list has six elements
 
@@ -223,7 +223,7 @@ if __name__ == "__main__":
                 # Apply rotation to pre-place, place, and pre-place (second time)
                 rotation_angle = box[2]  # Get the rotation angle
                 pre_place_rotated = apply_rotation(pre_place.copy(), rotation_angle)
-                box_abs_rotated = apply_rotation([box[0], box[1], master_point[2] + 0.2, 0, 0, 0], rotation_angle)  # Ensure correct z offset
+                box_abs_rotated = apply_rotation([box[0], box[1], master_point[2], 0, 0, 0], rotation_angle)  # Ensure correct z offset
 
                 rb.movel(pre_place_rotated)
                 time.sleep(3)
