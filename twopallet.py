@@ -168,14 +168,11 @@ if __name__ == "__main__":
 
     # box_coords now includes rotation angle as the third element (in radians)
     box_coords_1 = [
-        [0.1, 0.1, 0],  # 90 degrees
-        [0.2, 0.1, 0],  # 0 degrees
-        [0.1, 0.2, 0],  # 0 degrees
+        [0.05, 0.05, 0], [0.15, 0.05, 0], [0.25, 0.05, 0]  # 0 degrees
     ]
 
     box_coords_2 = [
-        [0.15, 0.15, 0],  # 90 degrees
-        [0.25, 0.15, 0],  # 0 degrees
+        [0.05, 0.05, 0], [0.15, 0.05, 0], [0.25, 0.05, 0]  # 0 degrees
     ]
 
     rb = RobotData()
@@ -195,25 +192,25 @@ if __name__ == "__main__":
                     pre_place = calculate_pre_point(box_abs)
 
                     rb.movel(pre_pickup)
-                    time.sleep(3)
+                    time.sleep(1.5)
                     rb.movel(pickup_point)
-                    time.sleep(2)
+                    time.sleep(1.5)
                     rb.movel(pre_pickup)
-                    time.sleep(2)
+                    time.sleep(1.5)
 
                     pre_place_rotated = apply_rotation(pre_place.copy(), rotation_angle)
                     box_abs_rotated = apply_rotation(box_abs.copy(), rotation_angle)
 
                     rb.movel(pre_place_rotated)
-                    time.sleep(4)
-                    rb.movel(box_abs_rotated)
                     time.sleep(3)
+                    rb.movel(box_abs_rotated)
+                    time.sleep(1.5)
                     rb.movel(pre_place_rotated)
-                    time.sleep(2)
+                    time.sleep(1.5)
 
                     pre_pickup_rotated = apply_rotation(pre_pickup.copy(), -rotation_angle)
                     rb.movel(pre_pickup_rotated)
-                    time.sleep(4)
+                    time.sleep(3)
 
                 # Place on pallet 2 if there are more coordinates
                 if i < len(box_coords_2):
@@ -224,25 +221,25 @@ if __name__ == "__main__":
                     pre_place = calculate_pre_point(box_abs)
 
                     rb.movel(pre_pickup)
-                    time.sleep(3)
+                    time.sleep(1.5)
                     rb.movel(pickup_point)
-                    time.sleep(2)
+                    time.sleep(1.5)
                     rb.movel(pre_pickup)
-                    time.sleep(2)
+                    time.sleep(1.5)
 
                     pre_place_rotated = apply_rotation(pre_place.copy(), rotation_angle)
                     box_abs_rotated = apply_rotation(box_abs.copy(), rotation_angle)
 
                     rb.movel(pre_place_rotated)
-                    time.sleep(4)
-                    rb.movel(box_abs_rotated)
                     time.sleep(3)
+                    rb.movel(box_abs_rotated)
+                    time.sleep(1.5)
                     rb.movel(pre_place_rotated)
-                    time.sleep(2)
+                    time.sleep(1.5)
 
                     pre_pickup_rotated = apply_rotation(pre_pickup.copy(), -rotation_angle)
                     rb.movel(pre_pickup_rotated)
-                    time.sleep(4)
+                    time.sleep(3)
 
             # Adjust height for next layer
             pickup_point[2] += 0.1
