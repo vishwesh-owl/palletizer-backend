@@ -242,7 +242,7 @@ if __name__ == "__main__":
                     time.sleep(3)
 
             # Adjust height for next layer
-            pickup_point[2] += 0.1
+            pickup_point[2] += 0
             master1_point[2] += 0.1
             master2_point[2] += 0.1
 
