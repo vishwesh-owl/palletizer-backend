@@ -168,84 +168,53 @@ if __name__ == "__main__":
 
     # box_coords now includes rotation angle as the third element (in radians)
     box_coords_1 = [
-        [0.1, 0.1, 1.57],  # 90 degrees
-        [0.2, 0.1, 0],  # 0 degrees
-        [0.1, 0.2, 0],  # 0 degrees
+        [0.05, 0.05, 0], [0.15, 0.05, 0], [0.25, 0.05, 0]  # 90 degrees
     ]
 
     box_coords_2 = [
-        [0.15, 0.15, 1.57],  # 90 degrees
-        [0.25, 0.15, 0],  # 0 degrees
+        [0.05, 0.05, 0], [0.15, 0.05, 0]  # 90 degrees
     ]
 
     rb = RobotData()
     try:
         rb.connect('192.168.1.200')
 
-        max_boxes = max(len(box_coords_1), len(box_coords_2))
-
+        current_angle = 0  # Initialize the current angle
         for layer in range(num_layers):
-            for i in range(max_boxes):
-                # Place on pallet 1 if there are more coordinates
-                if i < len(box_coords_1):
-                    box = box_coords_1[i]
-                    box_abs = [master1_point[j] + box[j] for j in range(2)] + [master1_point[2]] + master1_point[3:]
-                    rotation_angle = box[2]
+            for i in range(len(box_coords_1)):
+                # Alternate between pallet 1 and pallet 2
+                for master_point, box_coords in zip([master1_point, master2_point], [box_coords_1, box_coords_2]):
+                    box = box_coords[i]
+                    box_abs = [master_point[j] + box[j] for j in range(2)] + [master_point[2]] + master_point[3:]
+                    rotation_angle = box[2]  # Get the rotation angle
                     pre_pickup = calculate_pre_point(pickup_point)
                     pre_place = calculate_pre_point(box_abs)
 
                     rb.movel(pre_pickup)
-                    time.sleep(3)
+                    time.sleep(1.5)
                     rb.movel(pickup_point)
-                    time.sleep(2)
+                    time.sleep(1.5)
                     rb.movel(pre_pickup)
-                    time.sleep(2)
+                    time.sleep(1.5)
 
+                    # Apply rotation to pre-place, place, and pre-place (second time)
                     pre_place_rotated = apply_rotation(pre_place.copy(), rotation_angle)
                     box_abs_rotated = apply_rotation(box_abs.copy(), rotation_angle)
 
                     rb.movel(pre_place_rotated)
-                    time.sleep(4)
-                    rb.movel(box_abs_rotated)
                     time.sleep(3)
+                    rb.movel(box_abs_rotated)
+                    time.sleep(1.5)
                     rb.movel(pre_place_rotated)
-                    time.sleep(2)
+                    time.sleep(1.5)
 
+                    # Apply rotation to pre-pickup for next pickup
                     pre_pickup_rotated = apply_rotation(pre_pickup.copy(), -rotation_angle)
                     rb.movel(pre_pickup_rotated)
-                    time.sleep(4)
-
-                # Place on pallet 2 if there are more coordinates
-                if i < len(box_coords_2):
-                    box = box_coords_2[i]
-                    box_abs = [master2_point[j] + box[j] for j in range(2)] + [master2_point[2]] + master2_point[3:]
-                    rotation_angle = box[2]
-                    pre_pickup = calculate_pre_point(pickup_point)
-                    pre_place = calculate_pre_point(box_abs)
-
-                    rb.movel(pre_pickup)
                     time.sleep(3)
-                    rb.movel(pickup_point)
-                    time.sleep(2)
-                    rb.movel(pre_pickup)
-                    time.sleep(2)
-
-                    pre_place_rotated = apply_rotation(pre_place.copy(), rotation_angle)
-                    box_abs_rotated = apply_rotation(box_abs.copy(), rotation_angle)
-
-                    rb.movel(pre_place_rotated)
-                    time.sleep(4)
-                    rb.movel(box_abs_rotated)
-                    time.sleep(3)
-                    rb.movel(pre_place_rotated)
-                    time.sleep(2)
-
-                    pre_pickup_rotated = apply_rotation(pre_pickup.copy(), -rotation_angle)
-                    rb.movel(pre_pickup_rotated)
-                    time.sleep(4)
 
             # Adjust height for next layer
-            pickup_point[2] += 0.1
+            pickup_point[2] += 0
             master1_point[2] += 0.1
             master2_point[2] += 0.1
 
