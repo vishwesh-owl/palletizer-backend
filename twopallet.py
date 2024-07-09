@@ -135,29 +135,23 @@ def get_tcp_pose(robot_ip):
     return tcp_position
 
 
-def getMasterPoints(num_pallets):
+def getMasterPoints():
     robot_ip = '192.168.1.200'
-    if num_pallets == 1:
-        input("Press enter after reaching desired master location for Pallet 1 and switch robot to Remote mode")
-        master_point1 = get_tcp_pose(robot_ip)
-        print("Master Point 1:", master_point1)
-        master_point2 = None
-    else:
-        input("Press enter after reaching desired master location for Pallet 1 and switch robot to Remote mode")
-        master_point1 = get_tcp_pose(robot_ip)
-        print("Master Point 1:", master_point1)
+    input("Press enter after reaching desired master location for Pallet 1 and switch robot to Remote mode")
+    master1 = get_tcp_pose(robot_ip)
+    print(master1)
 
-        input("Press enter after reaching desired master location for Pallet 2")
-        master_point2 = get_tcp_pose(robot_ip)
-        print("Master Point 2:", master_point2)
+    input("Press enter after reaching desired master location for Pallet 2 and switch robot to Remote mode")
+    master2 = get_tcp_pose(robot_ip)
+    print(master2)
 
     input("Press enter after reaching desired pickup location")
     pickup = get_tcp_pose(robot_ip)
-    print("Pickup Point:", pickup)
+    print(pickup)
 
     num_layers = int(input("Enter the number of layers: "))
 
-    return pickup, master_point1, master_point2, num_layers
+    return pickup, master1, master2, num_layers
 
 
 def calculate_pre_point(point):
@@ -170,74 +164,65 @@ def apply_rotation(position, angle_rad):
 
 
 if __name__ == "__main__":
-    num_pallets = int(input("Enter the number of pallets (1 or 2): "))
+    pickup_point, master1_point, master2_point, num_layers = getMasterPoints()
 
-    pickup_point, master_point1, master_point2, num_layers = getMasterPoints(num_pallets)
-
-    # Two different box_coords for two pallets
-    box_coords_pallet1 = [
+    # box_coords now includes rotation angle as the third element (in radians)
+    box_coords_1 = [
         [0.1, 0.1, 1.57],  # 90 degrees
         [0.2, 0.1, 0],  # 0 degrees
         [0.1, 0.2, 0],  # 0 degrees
         [0.2, 0.2, 1.57]  # 90 degrees
     ]
 
-    box_coords_pallet2 = [
+    box_coords_2 = [
         [0.15, 0.15, 1.57],  # 90 degrees
         [0.25, 0.15, 0],  # 0 degrees
         [0.15, 0.25, 0],  # 0 degrees
         [0.25, 0.25, 1.57]  # 90 degrees
     ]
 
-    master_points = [master_point1, master_point2] if num_pallets == 2 else [master_point1]
-    box_coords_list = [box_coords_pallet1, box_coords_pallet2] if num_pallets == 2 else [box_coords_pallet1]
-
     rb = RobotData()
     try:
         rb.connect('192.168.1.200')
 
+        current_angle = 0  # Initialize the current angle
         for layer in range(num_layers):
-            for i in range(max(len(box_coords_pallet1), len(box_coords_pallet2))):
-                master_point = master_points[i % len(master_points)]  # Alternate between master points
-                box_coords = box_coords_list[i % len(box_coords_list)]  # Alternate between box coordinates
+            for i in range(len(box_coords_1)):
+                # Alternate between pallet 1 and pallet 2
+                for master_point, box_coords in zip([master1_point, master2_point], [box_coords_1, box_coords_2]):
+                    box = box_coords[i]
+                    box_abs = [master_point[j] + box[j] for j in range(2)] + [master_point[2]] + master_point[3:]
+                    rotation_angle = box[2]  # Get the rotation angle
+                    pre_pickup = calculate_pre_point(pickup_point)
+                    pre_place = calculate_pre_point(box_abs)
 
-                if i >= len(box_coords):
-                    continue  # Skip if the current box index exceeds the length of the box coordinates
+                    rb.movel(pre_pickup)
+                    time.sleep(3)
+                    rb.movel(pickup_point)
+                    time.sleep(2)
+                    rb.movel(pre_pickup)
+                    time.sleep(2)
 
-                box = box_coords[i]
-                box_abs = [master_point[j] + box[j] for j in range(2)] + [master_point[2]] + master_point[3:]
-                rotation_angle = box[2]  # Get the rotation angle
-                pre_pickup = calculate_pre_point(pickup_point)
-                pre_place = calculate_pre_point(box_abs)
+                    # Apply rotation to pre-place, place, and pre-place (second time)
+                    pre_place_rotated = apply_rotation(pre_place.copy(), rotation_angle)
+                    box_abs_rotated = apply_rotation(box_abs.copy(), rotation_angle)
 
-                rb.movel(pre_pickup)
-                time.sleep(3)
-                rb.movel(pickup_point)
-                time.sleep(2)
-                rb.movel(pre_pickup)
-                time.sleep(2)
+                    rb.movel(pre_place_rotated)
+                    time.sleep(4)
+                    rb.movel(box_abs_rotated)
+                    time.sleep(3)
+                    rb.movel(pre_place_rotated)
+                    time.sleep(2)
 
-                # Apply rotation to pre-place, place, and pre-place (second time)
-                pre_place_rotated = apply_rotation(pre_place.copy(), rotation_angle)
-                box_abs_rotated = apply_rotation(box_abs.copy(), rotation_angle)
-
-                rb.movel(pre_place_rotated)
-                time.sleep(4)
-                rb.movel(box_abs_rotated)
-                time.sleep(3)
-                rb.movel(pre_place_rotated)
-                time.sleep(2)
-
-                # Apply rotation to pre-pickup for next pickup
-                pre_pickup_rotated = apply_rotation(pre_pickup.copy(), -rotation_angle)
-                rb.movel(pre_pickup_rotated)
-                time.sleep(4)
+                    # Apply rotation to pre-pickup for next pickup
+                    pre_pickup_rotated = apply_rotation(pre_pickup.copy(), -rotation_angle)
+                    rb.movel(pre_pickup_rotated)
+                    time.sleep(4)
 
             # Adjust height for next layer
-            pickup_point[2] += 0.1
-            master_point1[2] += 0.1
-            if master_point2:
-                master_point2[2] += 0.1
+            pickup_point[2] += 0
+            master1_point[2] += 0.1
+            master2_point[2] += 0.1
 
     except (socket.error, socket.timeout) as e:
         print(f"Socket error: {e}")
@@ -245,7 +230,6 @@ if __name__ == "__main__":
         rb.disconnect()
 
     print("Pickup Point:", pickup_point)
-    print("Master Point 1:", master_point1)
-    if master_point2:
-        print("Master Point 2:", master_point2)
+    print("Master Point 1:", master1_point)
+    print("Master Point 2:", master2_point)
     print("Number of Layers:", num_layers)
